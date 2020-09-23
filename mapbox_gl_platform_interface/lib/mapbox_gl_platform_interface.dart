@@ -2,10 +2,12 @@ library mapbox_gl_platform_interface;
 
 import 'dart:math';
 import 'dart:typed_data';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
 import 'package:meta/meta.dart' show required, visibleForTesting;
 
 part 'src/callbacks.dart';

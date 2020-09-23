@@ -2,6 +2,7 @@ part of mapbox_gl_platform_interface;
 
 class MethodChannelMapboxGl extends MapboxGlPlatform {
   MethodChannel _channel;
+  Completer<bool> _ready = new Completer<bool>();
 
   Future<dynamic> _handleMethodCall(MethodCall call) async {
     switch (call.method) {
@@ -70,6 +71,9 @@ class MethodChannelMapboxGl extends MapboxGlPlatform {
       case 'map#onIdle':
         onMapIdlePlatform(null);
         break;
+      case 'map#ready':
+        _ready.complete(true);
+        break;
       default:
         throw MissingPluginException();
     }
@@ -79,22 +83,39 @@ class MethodChannelMapboxGl extends MapboxGlPlatform {
   Future<void> initPlatform(int id) async {
     assert(id != null);
     _channel = MethodChannel('plugins.flutter.io/mapbox_maps_$id');
-    await _channel.invokeMethod('map#waitForMap');
     _channel.setMethodCallHandler(_handleMethodCall);
+    try {
+      await _channel.invokeMethod('map#waitForMap');
+    } on Exception catch (e) {
+      await _ready.future;
+    }
   }
 
   @override
-  Widget buildView(
-      Map<String, dynamic> creationParams,
-      Function onPlatformViewCreated,
+  Widget buildView(Map<String, dynamic> creationParams, Function onPlatformViewCreated,
       Set<Factory<OneSequenceGestureRecognizer>> gestureRecognizers) {
     if (defaultTargetPlatform == TargetPlatform.android) {
-      return AndroidView(
+      return PlatformViewLink(
         viewType: 'plugins.flutter.io/mapbox_gl',
-        onPlatformViewCreated: onPlatformViewCreated,
-        gestureRecognizers: gestureRecognizers,
-        creationParams: creationParams,
-        creationParamsCodec: const StandardMessageCodec(),
+        surfaceFactory: (BuildContext context, PlatformViewController controller) {
+          return AndroidViewSurface(
+            controller: controller,
+            gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{},
+            hitTestBehavior: PlatformViewHitTestBehavior.opaque,
+          );
+        },
+        onCreatePlatformView: (PlatformViewCreationParams params) {
+          return PlatformViewsService.initSurfaceAndroidView(
+            id: params.id,
+            viewType: 'plugins.flutter.io/mapbox_gl',
+            layoutDirection: TextDirection.ltr,
+            creationParams: creationParams,
+            creationParamsCodec: StandardMessageCodec(),
+          )
+            ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
+            ..addOnPlatformViewCreatedListener(onPlatformViewCreated)
+            ..create();
+        },
       );
     } else if (defaultTargetPlatform == TargetPlatform.iOS) {
       return UiKitView(

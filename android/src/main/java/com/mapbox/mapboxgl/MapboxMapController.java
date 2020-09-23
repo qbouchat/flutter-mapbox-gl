@@ -283,6 +283,8 @@ final class MapboxMapController
     if (mapReadyResult != null) {
       mapReadyResult.success(null);
       mapReadyResult = null;
+    } else {
+      methodChannel.invokeMethod("map#ready", true);
     }
     mapboxMap.addOnCameraMoveStartedListener(this);
     mapboxMap.addOnCameraMoveListener(this);
