@@ -326,8 +326,8 @@ final class MapboxMapController
     @Override
     public void onStyleLoaded(@NonNull Style style) {
       MapboxMapController.this.style = style;
-      enableLineManager(style);
       enableSymbolManager(style);
+      enableLineManager(style);
       enableCircleManager(style);
       if (myLocationEnabled) {
         enableLocationComponent(style);
@@ -381,14 +381,14 @@ final class MapboxMapController
 
   private void enableLineManager(@NonNull Style style) {
     if (lineManager == null) {
-      lineManager = new LineManager(mapView, mapboxMap, style);
+      lineManager = new LineManager(mapView, mapboxMap, style, symbolManager.getLayerId());
       lineManager.addClickListener(MapboxMapController.this::onAnnotationClick);
     }
   }
 
   private void enableCircleManager(@NonNull Style style) {
     if (circleManager == null) {
-      circleManager = new CircleManager(mapView, mapboxMap, style);
+      circleManager = new CircleManager(mapView, mapboxMap, style, lineManager.getLayerId());
       circleManager.addClickListener(MapboxMapController.this::onAnnotationClick);
     }
   }
